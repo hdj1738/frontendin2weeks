@@ -1,47 +1,69 @@
 import streamlit as st
 import os
 
-st.title("🏛️ City Civilization Simulation")
+# Set page layout to wide for a true game screen feel
+st.set_page_config(page_title="Civilization World Builder", layout="wide")
 
-# 1. Initialize a base world map grid in session memory (0 = Grass, 1 = Stone/Road)
-if "city_grid" not in st.session_state:
-    st.session_state.city_grid = [
-        [0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 0, 0, 0]
+# Custom game styling header
+st.markdown("## 🛡️ EMPIRE BUILDER : VIRTUAL WORLD")
+
+# Initialize game state memory
+if "world_grid" not in st.session_state:
+    st.session_state.world_grid = [
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0],
+        [0, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 0, 0]
     ]
+if "gold" not in st.session_state:
+    st.session_state.gold = 1000
+if "population" not in st.session_state:
+    st.session_state.population = 250
 
-# Sidebar tool selection
-st.sidebar.header("City Controls")
-turn = st.sidebar.slider("Simulation Year / Turn", 1, 100, 1)
+# --- GAME HUD (SIDEBAR) ---
+st.sidebar.markdown("### 🎮 Command Center")
+turn = st.sidebar.slider("Game Turn / Year", 1, 100, 1)
 
-st.sidebar.subheader("Build Tool")
-selected_tool = st.sidebar.radio("Select Tile to Paint:", ["Grass (0)", "Stone Road (1)"])
-paint_val = 1 if "Stone" in selected_tool else 0
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏗️ Build Menu")
+build_choice = st.sidebar.selectbox("Select Asset to Place:", ["Grass Tile (0)", "Stone Road/Building (1)"])
+target_row = st.sidebar.selectbox("Map Row", [0, 1, 2, 3])
+target_col = st.sidebar.selectbox("Map Column", [0, 1, 2, 3, 4, 5])
 
-# Main Layout
-col1, col2 = st.columns([3, 1])
+if st.sidebar.button("🔨 Place on Map"):
+    new_val = 1 if "Stone" in build_choice else 0
+    st.session_state.world_grid[target_row][target_col] = new_val
+    st.session_state.gold -= 50  # Build cost
+    st.session_state.population += 10
+    st.rerun()
 
-with col1:
-    st.subheader("Interactive Base World Map")
-    st.write("Click any tile below to build/change it instantly:")
+# --- MAIN GAME SCREEN ---
+col_map, col_hud = st.columns([3, 1])
+
+with col_map:
+    st.markdown("#### 🗺️ Isometric World Map")
     
-    # 2. Render the grid using actual clickable buttons with images on them
-    for r_idx, row in enumerate(st.session_state.city_grid):
+    # Render the map entirely out of your image assets
+    for r_idx, row in enumerate(st.session_state.world_grid):
         cols = st.columns(len(row))
-        for c_idx, tile_val in enumerate(row):
+        for c_idx, tile_type in enumerate(row):
             with cols[c_idx]:
-                # Choose icon or label based on tile value
-                label = "🧱 Road" if tile_val == 1 else "🟩 Grass"
-                
-                # When a map tile button is clicked, update that specific coordinate!
-                if st.button(label, key=f"tile_{r_idx}_{c_idx}"):
-                    st.session_state.city_grid[r_idx][c_idx] = paint_val
-                    st.rerun()
+                if tile_type == 1:
+                    if os.path.exists("base_stone_flat_E.png"):
+                        st.image("base_stone_flat_E.png", width=85)
+                    else:
+                        st.write("🧱")
+                else:
+                    if os.path.exists("base_grass_high_detail_E.png"):
+                        st.image("base_grass_high_detail_E.png", width=85)
+                    else:
+                        st.write("🟩")
 
-with col2:
-    st.subheader("City Stats")
-    st.metric("Population", f"{1200 + (turn * 45)}", f"+{45} this turn")
-    st.metric("Treasury", "12,400 Gold", "+320")
+with col_hud:
+    st.markdown("#### 📊 Resource HUD")
+    st.metric("💰 Gold", f"{st.session_state.gold}", "+45/turn")
+    st.metric("👥 Population", f"{st.session_state.population}", "+10/turn")
+    st.metric("🌾 Food", "480", "-5")
+    
+    st.markdown("---")
+    st.info("💡 **Tip:** Use the sidebar build menu to place stone paths or buildings onto your isometric world map coordinates!")
