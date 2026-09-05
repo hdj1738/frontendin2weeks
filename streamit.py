@@ -1,42 +1,49 @@
 import streamlit as st
 import os
 
-st.title("🏛️ Civilization Simulation Dashboard")
+st.title("🏛️ City Civilization Simulation")
 
-# Simulation controls in the sidebar
-st.sidebar.header("Controls")
-turn = st.sidebar.slider("Turn", 1, 50, 1)
+# Sidebar controls
+st.sidebar.header("City Controls")
+turn = st.sidebar.slider("Simulation Year / Turn", 1, 100, 1)
+action = st.sidebar.selectbox("Zone Tool", ["Build Road", "Build House", "Build Farm"])
 
-# Main layout split into map and stats
-col1, col2 = st.columns([2, 1])
+if st.sidebar.button("Simulate Turn"):
+    st.sidebar.success(f"Year {turn} processed! City is growing.")
+
+# Main Layout
+col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.subheader("Isometric Map Grid")
+    st.subheader("City Map View")
     
-    # 0 = Grass Tile, 1 = Stone Tile
-    map_grid = [
-        [0, 1, 0],
-        [0, 0, 1],
-        [1, 0, 0]
+    # Expanded 5x5 City Grid Matrix (0=Grass, 1=Stone/Road, 2=Building)
+    city_grid = [
+        [0, 0, 1, 0, 0],
+        [0, 2, 1, 2, 0],
+        [1, 1, 1, 1, 1],
+        [0, 2, 1, 2, 0],
+        [0, 0, 1, 0, 0]
     ]
     
-    # Render the grid using columns and your uploaded assets
-    for row in map_grid:
+    # Render the larger city grid
+    for row in city_grid:
         cols = st.columns(len(row))
-        for i, tile_type in enumerate(row):
+        for i, tile in enumerate(row):
             with cols[i]:
-                if tile_type == 1:
+                if tile == 1:
                     if os.path.exists("base_stone_flat_E.png"):
-                        st.image("base_stone_flat_E.png", width=100)
+                        st.image("base_stone_flat_E.png", width=70)
                     else:
-                        st.info("🏢 Stone Tile")
+                        st.write("🧱")
                 else:
                     if os.path.exists("base_grass_high_detail_E.png"):
-                        st.image("base_grass_high_detail_E.png", width=100)
+                        st.image("base_grass_high_detail_E.png", width=70)
                     else:
-                        st.success("🟩 Grass Tile")
+                        st.write("🟩")
 
 with col2:
-    st.subheader("Stats")
-    st.metric("Gold", "500", "+25")
-    st.metric("Population", "1,200", "+12")
+    st.subheader("City Stats")
+    st.metric("Population", f"{1200 + (turn * 45)}", f"+{45} this turn")
+    st.metric("Treasury", "12,400 Gold", "+320")
+    st.metric("Food Supply", "850 units", "-12")
