@@ -1,32 +1,42 @@
 import streamlit as st
+import os
 
-# Set up the page layout
 st.title("🏛️ Civilization Simulation Dashboard")
-st.write("Welcome to your hackathon project frontend!")
 
-# Create a sidebar for game controls
-st.sidebar.header("Simulation Controls")
-turn_number = st.sidebar.slider("Current Turn", 1, 100, 1)
-run_simulation = st.sidebar.button("Process Turn")
+# Simulation controls in the sidebar
+st.sidebar.header("Controls")
+turn = st.sidebar.slider("Turn", 1, 50, 1)
 
-if run_simulation:
-    st.sidebar.success(f"Processing turn {turn_number}...")
-
-# Main dashboard area split into columns
+# Main layout split into map and stats
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.subheader("Map Grid")
-    # Placeholder grid layout for your Kenney isometric tiles
-    # In your actual project, you'll loop through your map matrix here
-    grid_cols = st.columns(3)
-    for col in grid_cols:
-        with col:
-            # You can replace this with st.image() for your tiles
-            st.info("Tile [Iso Asset]")
+    st.subheader("Isometric Map Grid")
+    
+    # 0 = Grass Tile, 1 = Stone Tile
+    map_grid = [
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 0, 0]
+    ]
+    
+    # Render the grid using columns and your uploaded assets
+    for row in map_grid:
+        cols = st.columns(len(row))
+        for i, tile_type in enumerate(row):
+            with cols[i]:
+                if tile_type == 1:
+                    if os.path.exists("base_stone_flat_E.png"):
+                        st.image("base_stone_flat_E.png", width=100)
+                    else:
+                        st.info("🏢 Stone Tile")
+                else:
+                    if os.path.exists("base_grass_high_detail_E.png"):
+                        st.image("base_grass_high_detail_E.png", width=100)
+                    else:
+                        st.success("🟩 Grass Tile")
 
 with col2:
-    st.subheader("Resource Metrics")
-    st.metric(label="Gold", value="500", delta="+25")
-    st.metric(label="Population", value="1,200", delta="+12")
-    st.metric(label="Food Supplies", value="340", delta="-5")
+    st.subheader("Stats")
+    st.metric("Gold", "500", "+25")
+    st.metric("Population", "1,200", "+12")
