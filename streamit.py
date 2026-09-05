@@ -1,69 +1,95 @@
 import streamlit as st
 import os
 
-# Set page layout to wide for a true game screen feel
-st.set_page_config(page_title="Civilization World Builder", layout="wide")
+# Set page layout for a wide retro game screen
+st.set_page_config(page_title="Retro City 2000 - 2.5D", layout="wide")
 
-# Custom game styling header
-st.markdown("## 🛡️ EMPIRE BUILDER : VIRTUAL WORLD")
+# Retro Game Styling (Dark tactical HUD theme)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    .game-title {
+        font-family: 'Courier New', Courier, monospace;
+        color: #00ffcc;
+        text-shadow: 2px 2px #ff00ff;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Initialize game state memory
-if "world_grid" not in st.session_state:
-    st.session_state.world_grid = [
-        [0, 0, 0, 1, 0, 0],
-        [0, 0, 1, 1, 1, 0],
-        [0, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 0, 0]
+st.markdown("<h1 class='game-title'>🌆 SIM-EMPIRE 2000 // 2.5D STRATEGY</h1>", unsafe_allow_html=True)
+
+# Initialize the world grid in game memory (0 = Grass, 1 = Stone Road/Building)
+if "world_map" not in st.session_state:
+    st.session_state.world_map = [
+        [0, 0, 1, 1, 0, 0],
+        [0, 1, 1, 0, 1, 0],
+        [1, 1, 0, 0, 1, 1],
+        [0, 1, 1, 1, 1, 0]
     ]
-if "gold" not in st.session_state:
-    st.session_state.gold = 1000
-if "population" not in st.session_state:
-    st.session_state.population = 250
 
-# --- GAME HUD (SIDEBAR) ---
-st.sidebar.markdown("### 🎮 Command Center")
-turn = st.sidebar.slider("Game Turn / Year", 1, 100, 1)
+if "treasury" not in st.session_state:
+    st.session_state.treasury = 5000
+if "citizens" not in st.session_state:
+    st.session_state.citizens = 320
+
+# --- GAME CONTROLS HUD (SIDEBAR) ---
+st.sidebar.markdown("### 🕹️ MAYOR COMMANDS")
+game_year = st.sidebar.slider("Game Year", 2026, 2100, 2026)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🏗️ Build Menu")
-build_choice = st.sidebar.selectbox("Select Asset to Place:", ["Grass Tile (0)", "Stone Road/Building (1)"])
-target_row = st.sidebar.selectbox("Map Row", [0, 1, 2, 3])
-target_col = st.sidebar.selectbox("Map Column", [0, 1, 2, 3, 4, 5])
+st.sidebar.markdown("### 🏗️ CONSTRUCTION TOOL")
+# Pick what you want to build with your mouse
+active_tool = st.sidebar.radio(
+    "Select Zone/Building:",
+    ["🟩 Clear Land (Grass)", "🧱 Stone Road / Base"]
+)
+tool_id = 1 if "Stone" in active_tool else 0
 
-if st.sidebar.button("🔨 Place on Map"):
-    new_val = 1 if "Stone" in build_choice else 0
-    st.session_state.world_grid[target_row][target_col] = new_val
-    st.session_state.gold -= 50  # Build cost
-    st.session_state.population += 10
-    st.rerun()
+st.sidebar.markdown("---")
+st.sidebar.info("💡 **How to play:** Select your tool above, then click any tile button directly on the map grid to build instantly!")
 
-# --- MAIN GAME SCREEN ---
-col_map, col_hud = st.columns([3, 1])
+# --- MAIN GAME VIEW (2.5D ISOMETRIC GRID) ---
+col_map, col_stats = st.columns([3, 1])
 
 with col_map:
-    st.markdown("#### 🗺️ Isometric World Map")
+    st.markdown("#### 🗺️ Isometric Sector Alpha")
     
-    # Render the map entirely out of your image assets
-    for r_idx, row in enumerate(st.session_state.world_grid):
+    # Render the map as an interactive grid of tiles and build buttons
+    for r_idx, row in enumerate(st.session_state.world_map):
         cols = st.columns(len(row))
-        for c_idx, tile_type in enumerate(row):
+        for c_idx, tile_val in enumerate(row):
             with cols[c_idx]:
-                if tile_type == 1:
+                # 1. Display the visual isometric asset graphic
+                if tile_val == 1:
                     if os.path.exists("base_stone_flat_E.png"):
-                        st.image("base_stone_flat_E.png", width=85)
+                        st.image("base_stone_flat_E.png", width=75)
                     else:
-                        st.write("🧱")
+                        st.markdown("🧱")
                 else:
                     if os.path.exists("base_grass_high_detail_E.png"):
-                        st.image("base_grass_high_detail_E.png", width=85)
+                        st.image("base_grass_high_detail_E.png", width=75)
                     else:
-                        st.write("🟩")
+                        st.markdown("🟩")
+                
+                # 2. Direct click-to-build button right underneath each tile
+                if st.button("Build here", key=f"btn_{r_idx}_{c_idx}"):
+                    st.session_state.world_map[r_idx][c_idx] = tool_id
+                    st.session_state.treasury -= 25 # Construction cost
+                    st.session_state.citizens += 15
+                    st.rerun()
 
-with col_hud:
-    st.markdown("#### 📊 Resource HUD")
-    st.metric("💰 Gold", f"{st.session_state.gold}", "+45/turn")
-    st.metric("👥 Population", f"{st.session_state.population}", "+10/turn")
-    st.metric("🌾 Food", "480", "-5")
+with col_stats:
+    st.markdown("#### 📊 CITY METRICS")
+    st.metric("💰 Treasury", f"${st.session_state.treasury}", "+$120/mo")
+    st.metric("👥 Population", f"{st.session_state.citizens}", "+15")
+    st.metric("⚡ Power Grid", "85%", "Stable")
+    st.metric("💧 Water Supply", "92%", "Optimal")
     
     st.markdown("---")
-    st.info("💡 **Tip:** Use the sidebar build menu to place stone paths or buildings onto your isometric world map coordinates!")
+    if st.button("🚀 Advance Month"):
+        st.session_state.treasury += 250
+        st.success("Month processed! Taxes collected.")
+        st.rerun()
